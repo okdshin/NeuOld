@@ -13,7 +13,7 @@
 #define NEU_TEST_PP_STRINGIZE_AUX(x) #x
 
 int main() {
-	std::cout << "testneu exec(" << NEU_TEST_PP_STRINGIZE(NEU_TEST_TEST_TARGET_FUNCTION) << "):" << std::endl;
+	std::cout << "neu test execute(" << NEU_TEST_PP_STRINGIZE(NEU_TEST_TEST_TARGET_FUNCTION) << "):" << std::endl;
 	try {
 		NEU_TEST_TEST_TARGET_FUNCTION();
 	}
@@ -21,7 +21,7 @@ int main() {
 		std::cout << "  testneu failed for unknown error." << std::endl;
 		return EXIT_FAILURE;
 	}
-	std::cout << "  testneu succeeded." << std::endl;
+	std::cout << "  neu test succeeded." << std::endl;
 }
 
 #endif //NEU_TEST_CPP_INCLUDE

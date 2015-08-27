@@ -1,0 +1,3 @@
+add_executable( example_full_connected_layer full_connected_layer_learning_xor.cpp )
+target_link_libraries( example_full_connected_layer ${OpenCL_LIBRARIES})
+set_target_properties( example_full_connected_layer PROPERTIES OUTPUT_NAME "full_connected_layer_lerning_xor" )

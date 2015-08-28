@@ -43,14 +43,6 @@ int main(int argc, char** argv) {
 		teach.insert(teach.end(), cput.begin(), cput.end());
 	}
 
-	/*
-	auto multiply_kernel = neu::make_kernel(neu::multiply_kernel_source, "multiply");
-	auto multiply_back_kernel =
-		neu::make_kernel(neu::multiply_back_kernel_source, "multiply_back");
-	auto update_delta_weight_kernel =
-		neu::make_kernel(neu::update_delta_weight_kernel_source, "update_delta_weight");
-	*/
-
 	std::uniform_real_distribution<> bin{-1.f, 1.f};
 
 	auto fc0 = neu::make_full_connected_layer(input_dim, 10, batch_size, neu::rectifier());

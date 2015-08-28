@@ -6,6 +6,13 @@ Neu is a C++ library for DNN using OpenCL.
 Implemented features
 ---
 
-- identity, sigmoid, rectifier
+### Activate Function
+- identity
+- sigmoid
+- rectifier
+
+### Layer
 - full connected layer
+
+### Method
 - dropout

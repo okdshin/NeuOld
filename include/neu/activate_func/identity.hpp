@@ -18,12 +18,7 @@ namespace neu {
 			boost::compute::fill(x.begin(), x.end(), 1.);
 			return x;
 		}
-		decltype(auto) operator()(neu::cpu_vector x) const {
-			std::fill(x.begin(), x.end(), 1.);
-			return x;
-		}
 	};
-	using diff_identity = differential<identity>;
 }// namespace neu
 
 #endif //NEU_IDENTITY_HPP

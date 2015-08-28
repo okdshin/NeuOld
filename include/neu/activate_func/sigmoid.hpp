@@ -19,11 +19,6 @@ namespace neu {
 				x.begin(), neu::sigmoid_kernel);
 			return x;
 		}
-		decltype(auto) operator()(neu::cpu_vector x) const {
-			std::transform(x.begin(), x.end(), x.begin(),
-				[](auto const& e){ return 1./(1.+std::exp(-e)); });
-			return x;
-		}
 	};
 	template<>
 	class differential<sigmoid> {
@@ -33,16 +28,7 @@ namespace neu {
 				x.begin(), neu::diff_sigmoid_kernel);
 			return x;
 		}
-		decltype(auto) operator()(neu::cpu_vector x) const {
-			std::transform(x.begin(), x.end(), x.begin(),
-				[](auto const& e){
-					const neu::scalar sigma = 1./(1.+std::exp(-e));
-					return sigma*(1.-sigma);
-				});
-			return x;
-		}
 	};
-	using diff_sigmoid = differential<sigmoid>;
 }// namespace neu
 
 #endif //NEU_SIGMOID_HPP

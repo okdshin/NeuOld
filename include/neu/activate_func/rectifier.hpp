@@ -18,11 +18,6 @@ namespace neu {
 				result.begin(), neu::rectifier_kernel);
 			return result;
 		}
-		decltype(auto) operator()(neu::cpu_vector x) const {
-			std::transform(x.begin(), x.end(), x.begin(),
-				[](auto const& e){ return e > 0 ? e : 0; });
-			return x;
-		}
 	};
 	template<>
 	class differential<rectifier> {
@@ -33,13 +28,7 @@ namespace neu {
 				result.begin(), neu::diff_rectifier_kernel);
 			return result;
 		}
-		decltype(auto) operator()(neu::cpu_vector x) const {
-			std::transform(x.begin(), x.end(), x.begin(),
-				[](auto const& e){ return e > 0 ? 1 : 0; });
-			return x;
-		}
 	};
-	using diff_rectifier = differential<rectifier>;
 }// namespace neu
 
 #endif //NEU_RECTIFIER_HPP

@@ -1,5 +1,4 @@
 Neu
 ===
 
-Neu is Deep Neural Network Library for C++.
-Neu is implemented by using OpenCL.
+Neu is C++ library for DNN using OpenCL.

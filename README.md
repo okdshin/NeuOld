@@ -1,4 +1,4 @@
 Neu
 ===
 
-Neu is C++ library for DNN using OpenCL.
+Neu is a C++ library for DNN using OpenCL.

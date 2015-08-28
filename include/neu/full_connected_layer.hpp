@@ -81,7 +81,7 @@ namespace neu {
 		}
 
 		template<typename Rand>
-		decltype(auto) init_weight_randomly(Rand rand) {
+		decltype(auto) init_weight_randomly(Rand const& rand) {
 			cpu_vector cpu_weight(weight_.size());
 			std::generate(cpu_weight.begin(), cpu_weight.end(), rand);
 			boost::compute::copy(cpu_weight.begin(), cpu_weight.end(), weight_.begin());

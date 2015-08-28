@@ -4,14 +4,14 @@
 #include <neu/activate_func/identity.hpp>
 #include <neu/full_connected_layer.hpp>
 
-namespace testneu {
+namespace neu_test {
 	decltype(auto) full_connected_layer_test() {
 	}
 }
 
-#ifndef TESTNEU_CPP_INCLUDE
-#	define TESTNEU_TEST_TARGET_FUNCTION testneu::full_connected_layer_test
-#	include <testneu/include_main.hpp>
+#ifndef NEU_TEST_CPP_INCLUDE
+#	define NEU_TEST_TEST_TARGET_FUNCTION neu_test::full_connected_layer_test
+#	include <test/include_main.hpp>
 #endif
 
 /*

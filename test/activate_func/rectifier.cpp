@@ -1,6 +1,6 @@
 #include <neu/activate_func/rectifier.hpp>
 
-namespace testneu {
+namespace neu_test {
 	decltype(auto) activate_func_rectifier_test() {
 		neu::rectifier a;
 		neu::differential<neu::rectifier> da;
@@ -18,7 +18,7 @@ namespace testneu {
 }
 
 #ifndef NEU_TEST_CPP_INCLUDE
-#	define NEU_TEST_TEST_TARGET_FUNCTION testneu::activate_func_rectifier_test
+#	define NEU_TEST_TEST_TARGET_FUNCTION neu_test::activate_func_rectifier_test
 #	include <test/include_main.hpp>
 #endif
 

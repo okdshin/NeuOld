@@ -43,13 +43,6 @@ namespace neu {
 			neu::make_index_range<
 				std::tuple_size<std::remove_reference_t<Tuple>>::value-1, 0>());
 	}
-	/* //range version
-	template<typename... Ls, std::size_t... Is, typename F>
-	decltype(auto) feedforward(std::tuple<Ls...>& t,
-			neu::index_range<Is...> indices, F&& f) {
-		neu::feed_impl<+1>(t, std::forward<F>(f), indices);
-	}
-	*/
 }// namespace neu
 
 #endif //NEU_TUPLE_ALGORITHM_HPP

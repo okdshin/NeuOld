@@ -120,8 +120,6 @@ namespace neu {
 			auto df = diff_activate_func_(u_);
 			boost::compute::transform(df.begin(), df.end(), next_v.begin(),
 				delta_.begin(), boost::compute::multiplies<scalar>());
-			//print(delta_);
-			//print(weight_);
 		}
 
 		decltype(auto) calc_v() {
@@ -142,8 +140,6 @@ namespace neu {
 			std::size_t region[] = {input_dim_, output_dim_};
 			boost::compute::system::default_queue().enqueue_nd_range_kernel(
 				update_delta_weight_kernel_, 2, origin, region, nullptr).wait();
-			//print(delta_weight_);
-			//print(delta_bias_);
 		}
 
 		decltype(auto) update_weight() {

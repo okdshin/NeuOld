@@ -12,6 +12,19 @@ namespace neu {
 		//TODO throw std::cout << program.build_log() << std::endl;
 		return kernel(program, name.c_str());
 	}
+	template<std::size_t Dim, typename Kernel, typename... Args>
+	decltype(auto) execute_nd_range_kernel(
+		Kernel&& kernel,
+		std::array<std::size_t, Dim> const& origin,
+		std::array<std::size_t, Dim> const& region,
+		Args&&... args
+	) {
+		static_assert(std::is_same<std::decay_t<Kernel>, boost::compute::kernel>::value,
+			"Kernel must be boost::compute::kernel");
+		kernel.set_args(std::forward<Args>(args)...);
+		return boost::compute::system::default_queue().enqueue_nd_range_kernel(
+			kernel, Dim, origin.data(), region.data(), nullptr);
+	}
 }// namespace neu
 
 #endif //NEU_KERNEL_HPP

@@ -3,6 +3,7 @@
 //20150622
 #include <neu/basic_type.hpp>
 #include <neu/kernel.hpp>
+#include <neu/learning_rate_gen/fixed_learning_rate_gen.hpp>
 namespace neu {
 	const char multiply_kernel_source[] = BOOST_COMPUTE_STRINGIZE_SOURCE(
 		__kernel void multiply(
@@ -51,21 +52,24 @@ namespace neu {
 				weight_sum += delta[gr+output_dim*b]*input[gc+input_dim*b];
 				bias_sum += delta[gr+output_dim*b];
 			}
-			delta_weight[gc+input_dim*gr] -= 0.1*weight_sum/batch_size;
-			delta_bias[gr] -= 0.1*bias_sum/batch_size;
+			delta_weight[gc+input_dim*gr] += weight_sum/batch_size;
+			delta_bias[gr] += bias_sum/batch_size;
 		}
 	);
-	template<typename ActivateFunc, typename DiffActivateFunc>
+	template<typename ActivateFunc, typename DiffActivateFunc,
+		typename LearningRateGen>
 	class full_connected_layer {
 	public:
 		full_connected_layer(
 			std::size_t input_dim, std::size_t output_dim, std::size_t batch_size,
 			ActivateFunc const& activate_func, DiffActivateFunc const& diff_activate_func,
+			LearningRateGen const& learning_rate_gen,
 			boost::compute::kernel const& multiply_kernel,
 			boost::compute::kernel const& multiply_back_kernel,
 			boost::compute::kernel const& update_delta_weight_kernel)
 			: input_dim_{input_dim}, output_dim_{output_dim}, batch_size_{batch_size},
 			activate_func_(activate_func), diff_activate_func_(diff_activate_func),
+			learning_rate_gen_(learning_rate_gen),
 			multiply_kernel_(multiply_kernel),
 			multiply_back_kernel_(multiply_back_kernel),
 			update_delta_weight_kernel_(update_delta_weight_kernel),
@@ -76,6 +80,10 @@ namespace neu {
 			v_(input_dim_*batch_size_),
 			delta_weight_(input_dim_*output_dim_), delta_bias_(output_dim_)
 		{
+			init_delta_weight();
+		}
+
+		decltype(auto) init_delta_weight() {
 			boost::compute::fill(delta_weight_.begin(), delta_weight_.end(), 0.f);
 			boost::compute::fill(delta_bias_.begin(), delta_bias_.end(), 0.f);
 		}
@@ -96,62 +104,59 @@ namespace neu {
 
 		decltype(auto) get_u() const { return (u_); }
 
-
 		decltype(auto) get_y_dim() const { return output_dim_; }
 		decltype(auto) get_batch_size() const { return batch_size_; }
 
 		decltype(auto) calc_u_and_y(gpu_vector const& x) {
-			multiply_kernel_.set_args(x, u_, weight_, bias_,
-				static_cast<int>(input_dim_), static_cast<int>(output_dim_));
-			std::size_t origin[] = {0, 0};
-			std::size_t region[] = {output_dim_, batch_size_};
-			boost::compute::system::default_queue().enqueue_nd_range_kernel(
-				multiply_kernel_, 2, origin, region, nullptr).wait();
+			neu::execute_nd_range_kernel<2>(
+				multiply_kernel_, {0, 0}, {output_dim_, batch_size_},
+				x, u_, weight_, bias_,
+				static_cast<int>(input_dim_), static_cast<int>(output_dim_)).wait();
 			y_ = activate_func_(u_);
 		}
-		decltype(auto) calc_y(gpu_vector const& x) {
-			calc_u_and_y(x);
-		}
+		decltype(auto) calc_y(gpu_vector const& x) { calc_u_and_y(x); }
 		decltype(auto) get_y() const { return (y_); }
 
 		decltype(auto) init_delta(gpu_vector const& delta) { delta_ = delta; }
 		decltype(auto) calc_delta(gpu_vector const& next_v) {
 			assert(u_.size() == next_v.size());
 			auto df = diff_activate_func_(u_);
+
+			// delta[l] = df * v[l+1]
 			boost::compute::transform(df.begin(), df.end(), next_v.begin(),
 				delta_.begin(), boost::compute::multiplies<scalar>());
 		}
 
 		decltype(auto) calc_v() {
-			multiply_back_kernel_.set_args(delta_, v_, weight_,
-				static_cast<int>(output_dim_), static_cast<int>(input_dim_));
-			std::size_t origin[] = {0, 0};
-			std::size_t region[] = {input_dim_, batch_size_};
-			boost::compute::system::default_queue().enqueue_nd_range_kernel(
-				multiply_back_kernel_, 2, origin, region, nullptr).wait();
+			neu::execute_nd_range_kernel<2>(
+				multiply_back_kernel_, {0, 0}, {input_dim_, batch_size_},
+				delta_, v_, weight_,
+				static_cast<int>(output_dim_), static_cast<int>(input_dim_)).wait();
 		}
 		decltype(auto) get_v() const { return (v_); }
 
 		decltype(auto) update_delta_weight(gpu_vector const& x) {
-			update_delta_weight_kernel_.set_args(x, delta_, delta_weight_, delta_bias_,
+			neu::execute_nd_range_kernel<2>(
+				update_delta_weight_kernel_, {0, 0}, {input_dim_, output_dim_},
+				x, delta_, delta_weight_, delta_bias_,
 				static_cast<int>(input_dim_), static_cast<int>(output_dim_),
-				static_cast<int>(batch_size_));
-			std::size_t origin[] = {0, 0};
-			std::size_t region[] = {input_dim_, output_dim_};
-			boost::compute::system::default_queue().enqueue_nd_range_kernel(
-				update_delta_weight_kernel_, 2, origin, region, nullptr).wait();
+				static_cast<int>(batch_size_)).wait();
 		}
 
+		//TODO customizable
 		decltype(auto) update_weight() {
+			/*
+			// weight -= delta_weight
 			boost::compute::transform(weight_.begin(), weight_.end(),
-				delta_weight_.begin(), weight_.begin(),
-				boost::compute::plus<scalar>());
-			boost::compute::fill(delta_weight_.begin(), delta_weight_.end(), 0.);
+				delta_weight_.begin(), weight_.begin(), boost::compute::minus<scalar>());
 
+			// bias -= delta_bias
 			boost::compute::transform(bias_.begin(), bias_.end(),
-				delta_bias_.begin(), bias_.begin(),
-				boost::compute::plus<scalar>());
-			boost::compute::fill(delta_bias_.begin(), delta_bias_.end(), 0.);
+				delta_bias_.begin(), bias_.begin(), boost::compute::minus<scalar>());
+			*/
+
+			learning_rate_gen_(weight_, bias_, delta_weight_, delta_bias_);
+			init_delta_weight();
 		}
 
 	private:
@@ -161,6 +166,7 @@ namespace neu {
 
 		ActivateFunc activate_func_;
 		DiffActivateFunc diff_activate_func_;
+		LearningRateGen learning_rate_gen_;
 		boost::compute::kernel multiply_kernel_;
 		boost::compute::kernel multiply_back_kernel_;
 		boost::compute::kernel update_delta_weight_kernel_;
@@ -175,19 +181,22 @@ namespace neu {
 		gpu_vector delta_bias_;
 	};
 
-	template<typename ActivateFunc>
+	template<typename ActivateFunc, typename LearningRateGen=fixed_learning_rate_gen>
 	decltype(auto) make_full_connected_layer(
 			std::size_t input_dim, std::size_t output_dim, std::size_t batch_size,
 			ActivateFunc const& activate_func,
+			LearningRateGen const& learning_rate_gen=fixed_learning_rate_gen(0.1f),
 			boost::compute::kernel const& multiply_kernel
 				=make_kernel(multiply_kernel_source, "multiply"),
 			boost::compute::kernel const& multiply_back_kernel
 				=make_kernel(neu::multiply_back_kernel_source, "multiply_back"),
 			boost::compute::kernel const& update_delta_weight_kernel
 				=make_kernel(update_delta_weight_kernel_source, "update_delta_weight")) {
-		return full_connected_layer<ActivateFunc, differential<ActivateFunc>>(
+		static_assert(std::is_same<LearningRateGen, fixed_learning_rate_gen>::value, "");
+		return full_connected_layer<ActivateFunc, differential<ActivateFunc>,
+				LearningRateGen>(
 			input_dim, output_dim, batch_size,
-			activate_func, differential<ActivateFunc>(),
+			activate_func, differential<ActivateFunc>(), learning_rate_gen,
 			multiply_kernel, multiply_back_kernel, update_delta_weight_kernel);
 	}
 }// namespace neu

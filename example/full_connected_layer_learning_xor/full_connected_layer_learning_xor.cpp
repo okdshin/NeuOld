@@ -40,19 +40,9 @@ int main(int argc, char** argv) {
 		teach.insert(teach.end(), cput.begin(), cput.end());
 	}
 
-	auto multiply_kernel = neu::make_kernel(neu::multiply_kernel_source, "multiply");
-	auto multiply_back_kernel =
-		neu::make_kernel(neu::multiply_back_kernel_source, "multiply_back");
-	auto update_delta_weight_kernel =
-		neu::make_kernel(neu::update_delta_weight_kernel_source, "update_delta_weight");
-
 	auto layers = std::make_tuple(
-		neu::make_full_connected_layer(
-			input_dim, 3, batch_size, neu::rectifier(),
-			multiply_kernel, multiply_back_kernel, update_delta_weight_kernel),
-		neu::make_full_connected_layer(
-			3, output_dim, batch_size, neu::sigmoid(),
-			multiply_kernel, multiply_back_kernel, update_delta_weight_kernel)
+		neu::make_full_connected_layer(input_dim, 3, batch_size, neu::rectifier()),
+		neu::make_full_connected_layer(3, output_dim, batch_size, neu::sigmoid())
 	);
 
 	std::uniform_real_distribution<> bin{-1,1};

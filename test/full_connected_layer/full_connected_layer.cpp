@@ -1,11 +1,63 @@
 //TODO
-
+#include <neu/basic_type.hpp>
 #include <neu/kernel.hpp>
 #include <neu/activate_func/identity.hpp>
 #include <neu/full_connected_layer.hpp>
+#include <neu/vector_io.hpp>
 
 namespace neu_test {
 	decltype(auto) full_connected_layer_test() {
+		using namespace neu;
+		{
+			auto batch_size = 2u;
+			auto input_dim = 3u;
+			auto output_dim = 4u;
+			auto input_vector = to_gpu_vector(cpu_vector{0,1,2, 3,4,5});
+			auto weight = to_gpu_vector(cpu_vector{0,1,2, 3,4,5, 6,7,8, 9,10,11});
+			auto bias = to_gpu_vector(cpu_vector{0, 1, 2, 3});
+			gpu_vector output_vector(output_dim*batch_size); execute_nd_range_kernel<2>(
+				make_kernel(multiply_kernel_source, "multiply"),
+				{0, 0}, {output_dim, batch_size},
+				input_vector, output_vector, weight, bias,
+				static_cast<int>(input_dim), static_cast<int>(output_dim)).wait();
+			assert("full_connected_layer_test_multiply" &&
+				(to_cpu_vector(output_vector) == cpu_vector{5,15,25,35, 14,51,88,125}));
+		}
+		{
+			auto batch_size = 2u;
+			auto input_dim = 3u;
+			auto output_dim = 4u;
+			auto delta = to_gpu_vector(cpu_vector{0,1,2,3, 4,5,6,7});
+			auto weight = to_gpu_vector(cpu_vector{0,1,2, 3,4,5, 6,7,8, 9,10,11});
+			gpu_vector v(input_dim*batch_size);
+			neu::execute_nd_range_kernel<2>(
+				make_kernel(multiply_back_kernel_source, "multiply_back"),
+				{0, 0}, {input_dim, batch_size},
+				delta, v, weight,
+				static_cast<int>(output_dim), static_cast<int>(input_dim)).wait();
+			assert("full_connected_layer_test_multiply_back" &&
+				(to_cpu_vector(v) == cpu_vector{42,48,54, 114,136,158}));
+		}
+		{
+			auto batch_size = 2u;
+			auto input_dim = 3u;
+			auto output_dim = 4u;
+			auto input_vector = to_gpu_vector(cpu_vector{0,1,2, 3,4,5});
+			auto delta = to_gpu_vector(cpu_vector{0,1,2,3, 4,5,6,7});
+			auto delta_weight = to_gpu_vector(cpu_vector{0,1,2, 3,4,5, 6,7,8, 9,10,11});
+			auto delta_bias = to_gpu_vector(cpu_vector{0,1,2,3});
+			neu::execute_nd_range_kernel<2>(
+				make_kernel(update_delta_weight_kernel_source, "update_delta_weight"),
+				{0, 0}, {input_dim, output_dim},
+				input_vector, delta, delta_weight, delta_bias,
+				static_cast<int>(input_dim), static_cast<int>(output_dim),
+				static_cast<int>(batch_size)).wait();
+			assert("full_connected_layer_test_update_delta_weight_weight" &&
+				(to_cpu_vector(delta_weight) == cpu_vector{
+				 	6,9,12, 10.5,14.5,18.5, 15,20,25, 19.5,25.5,31.5}));
+			assert("full_connected_layer_test_update_delta_weight_weight_bias" &&
+				(to_cpu_vector(delta_bias) == cpu_vector{2,4,6,8}));
+		}
 	}
 }
 
@@ -13,79 +65,3 @@ namespace neu_test {
 #	define NEU_TEST_TEST_TARGET_FUNCTION neu_test::full_connected_layer_test
 #	include <test/include_main.hpp>
 #endif
-
-/*
-decltype(auto) print(neu::cpu_vector const& v) {
-	for(auto const& e : v) {
-		std::cout << e << " ";
-	}
-	std::cout << std::flush;
-}
-decltype(auto) print(neu::gpu_vector const& v) {
-	print(neu::to_cpu_vector(v));
-}
-int main(int argc, char** argv) {
-	std::cout << "hello world" << std::endl;
-
-	std::random_device rand{};
-
-	auto input_dim = 2u;
-	auto output_dim = 1u;
-	auto batch_size = 4u;
-	std::vector<neu::cpu_vector> cpu_input = {
-		{0.f, 0.f}, {1.f, 0.f}, {0.f, 1.f}, {1.f, 1.f}
-	};
-	std::vector<neu::cpu_vector> cpu_teach = {
-		{0.f}, {0.f}, {0.f}, {1.f}
-	};
-
-	neu::gpu_vector input;
-	for(auto const& cpui : cpu_input) {
-		input.insert(input.end(), cpui.begin(), cpui.end());
-	}
-	neu::gpu_vector teach;
-	for(auto const& cput : cpu_teach) {
-		teach.insert(teach.end(), cput.begin(), cput.end());
-	}
-
-	auto multiply_kernel = neu::make_kernel(neu::multiply_kernel_source, "multiply");
-	auto multiply_back_kernel =
-		neu::make_kernel(neu::multiply_back_kernel_source, "multiply_back");
-	auto update_delta_weight_kernel =
-		neu::make_kernel(neu::update_delta_weight_kernel_source, "update_delta_weight");
-	auto full_connected = neu::make_full_connected_layer(
-		input_dim, output_dim, batch_size, neu::sigmoid(),
-		multiply_kernel, multiply_back_kernel, update_delta_weight_kernel);
-	std::uniform_real_distribution<> bin{-1,1};
-	full_connected.init_weight_randomly([&rand, &bin]() { return bin(rand); });
-	auto weight = full_connected.get_weight();
-	auto bias = full_connected.get_bias();
-	std::cout << "weight"; print(weight); std::cout << "\n";
-	std::cout << "bias"; print(bias); std::cout << "\n";
-	for(auto i = 0u; i < 1000u; ++i) {
-		std::cout << "epoch" << i;
-		full_connected.calc_u_and_y(input);
-		auto u = full_connected.get_u();
-		auto y = full_connected.get_y();
-		auto bias = full_connected.get_bias();
-		std::cout << "u:"; print(u);
-		std::cout << "y:"; print(y);
-		std::cout << "bias:"; print(bias);
-		std::cout << "\n";
-		boost::compute::transform(y.begin(), y.end(), teach.begin(), y.begin(), boost::compute::minus<neu::scalar>());
-		full_connected.init_delta(y);
-		full_connected.update_delta_weight(input);
-		full_connected.update_weight();
-		neu::gpu_vector squared_errors(y.size());
-		boost::compute::transform(y.begin(), y.end(), y.begin(), squared_errors.begin(), boost::compute::multiplies<neu::scalar>());
-		auto error = boost::compute::accumulate(squared_errors.begin(), squared_errors.end(), 0.0f);
-		std::cout << "here" << error << std::endl;
-	}
-	{
-		auto weight = full_connected.get_weight();
-		auto bias = full_connected.get_bias();
-		std::cout << "weight"; print(weight); std::cout << "\n";
-		std::cout << "bias"; print(bias); std::cout << "\n";
-	}
-}
-*/

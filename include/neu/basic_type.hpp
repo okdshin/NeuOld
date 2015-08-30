@@ -23,6 +23,7 @@ namespace neu {
 		boost::compute::copy(x.begin(), x.end(), cpu_x.begin());
 		return cpu_x;
 	}
+
 }// namespace neu
 
 #endif //NEU_BASIC_TYPE_HPP

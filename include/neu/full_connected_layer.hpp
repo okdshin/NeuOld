@@ -192,7 +192,6 @@ namespace neu {
 				=make_kernel(neu::multiply_back_kernel_source, "multiply_back"),
 			boost::compute::kernel const& update_delta_weight_kernel
 				=make_kernel(update_delta_weight_kernel_source, "update_delta_weight")) {
-		static_assert(std::is_same<LearningRateGen, fixed_learning_rate_gen>::value, "");
 		return full_connected_layer<ActivateFunc, differential<ActivateFunc>,
 				LearningRateGen>(
 			input_dim, output_dim, batch_size,

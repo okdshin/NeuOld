@@ -20,9 +20,9 @@ namespace neu {
 			rate_(rate) {}
 		decltype(auto) operator()(gpu_vector& weight, gpu_vector& bias,
 				gpu_vector const& delta_weight, gpu_vector const& delta_bias) {
-			auto weight_event = execute_nd_range_kernel<1>(kernel_, {0}, {weight.size()},
+			auto weight_event = async_execute_nd_range_kernel<1>(kernel_, {0}, {weight.size()},
 				weight, delta_weight, rate_);
-			auto bias_event = execute_nd_range_kernel<1>(kernel_, {0}, {bias.size()},
+			auto bias_event = async_execute_nd_range_kernel<1>(kernel_, {0}, {bias.size()},
 				bias, delta_bias, rate_);
 			weight_event.wait();
 			bias_event.wait();

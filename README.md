@@ -11,10 +11,10 @@ Implemented features
 - sigmoid
 - rectifier
 
-### Layer
+### NN Layer
 - full connected layer
 
-### Method
+### Regularization Method
 - dropout
 
 ### Learning Rate Generator

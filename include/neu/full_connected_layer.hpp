@@ -111,7 +111,7 @@ namespace neu {
 			neu::execute_nd_range_kernel<2>(
 				multiply_kernel_, {0, 0}, {output_dim_, batch_size_},
 				x, u_, weight_, bias_,
-				static_cast<int>(input_dim_), static_cast<int>(output_dim_)).wait();
+				static_cast<int>(input_dim_), static_cast<int>(output_dim_));
 			y_ = activate_func_(u_);
 		}
 		decltype(auto) calc_y(gpu_vector const& x) { calc_u_and_y(x); }
@@ -131,7 +131,7 @@ namespace neu {
 			neu::execute_nd_range_kernel<2>(
 				multiply_back_kernel_, {0, 0}, {input_dim_, batch_size_},
 				delta_, v_, weight_,
-				static_cast<int>(output_dim_), static_cast<int>(input_dim_)).wait();
+				static_cast<int>(output_dim_), static_cast<int>(input_dim_));
 		}
 		decltype(auto) get_v() const { return (v_); }
 
@@ -140,7 +140,7 @@ namespace neu {
 				update_delta_weight_kernel_, {0, 0}, {input_dim_, output_dim_},
 				x, delta_, delta_weight_, delta_bias_,
 				static_cast<int>(input_dim_), static_cast<int>(output_dim_),
-				static_cast<int>(batch_size_)).wait();
+				static_cast<int>(batch_size_));
 		}
 
 		//TODO customizable

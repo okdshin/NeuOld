@@ -15,11 +15,12 @@ namespace neu_test {
 			auto input_vector = to_gpu_vector(cpu_vector{0,1,2, 3,4,5});
 			auto weight = to_gpu_vector(cpu_vector{0,1,2, 3,4,5, 6,7,8, 9,10,11});
 			auto bias = to_gpu_vector(cpu_vector{0, 1, 2, 3});
-			gpu_vector output_vector(output_dim*batch_size); execute_nd_range_kernel<2>(
+			gpu_vector output_vector(output_dim*batch_size);
+			execute_nd_range_kernel<2>(
 				make_kernel(multiply_kernel_source, "multiply"),
 				{0, 0}, {output_dim, batch_size},
 				input_vector, output_vector, weight, bias,
-				static_cast<int>(input_dim), static_cast<int>(output_dim)).wait();
+				static_cast<int>(input_dim), static_cast<int>(output_dim));
 			assert("full_connected_layer_test_multiply" &&
 				(to_cpu_vector(output_vector) == cpu_vector{5,15,25,35, 14,51,88,125}));
 		}
@@ -34,7 +35,7 @@ namespace neu_test {
 				make_kernel(multiply_back_kernel_source, "multiply_back"),
 				{0, 0}, {input_dim, batch_size},
 				delta, v, weight,
-				static_cast<int>(output_dim), static_cast<int>(input_dim)).wait();
+				static_cast<int>(output_dim), static_cast<int>(input_dim));
 			assert("full_connected_layer_test_multiply_back" &&
 				(to_cpu_vector(v) == cpu_vector{42,48,54, 114,136,158}));
 		}
@@ -51,7 +52,7 @@ namespace neu_test {
 				{0, 0}, {input_dim, output_dim},
 				input_vector, delta, delta_weight, delta_bias,
 				static_cast<int>(input_dim), static_cast<int>(output_dim),
-				static_cast<int>(batch_size)).wait();
+				static_cast<int>(batch_size));
 			assert("full_connected_layer_test_update_delta_weight_weight" &&
 				(to_cpu_vector(delta_weight) == cpu_vector{
 				 	6,9,12, 10.5,14.5,18.5, 15,20,25, 19.5,25.5,31.5}));

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <neu/vector_io.hpp>
 #include <neu/layer_algorithm.hpp>
 #include <neu/kernel.hpp>
 #include <neu/kernel.hpp>
@@ -6,15 +7,6 @@
 #include <neu/activate_func/rectifier.hpp>
 #include <neu/full_connected_layer.hpp>
 
-decltype(auto) print(neu::cpu_vector const& v) {
-	for(auto const& e : v) {
-		std::cout << e << " ";
-	}
-	std::cout << std::flush;
-}
-decltype(auto) print(neu::gpu_vector const& v) {
-	print(neu::to_cpu_vector(v));
-}
 int main(int argc, char** argv) {
 	std::cout << "hello world" << std::endl;
 
@@ -70,8 +62,8 @@ int main(int argc, char** argv) {
 			std::cout << i << ":" << error_sum << std::endl;
 		}
 	}
-	print(teach); std::cout << "\n";
+	neu::print(teach); std::cout << "\n";
 	auto y = std::get<std::tuple_size<decltype(layers)>::value-1>(layers).get_y();
-	print(y);
+	neu::print(y);
 	std::cout << std::endl;
 }

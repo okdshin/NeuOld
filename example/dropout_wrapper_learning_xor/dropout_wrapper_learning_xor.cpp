@@ -1,4 +1,5 @@
 #include <iostream>
+#include <neu/vector_io.hpp>
 #include <neu/layer_algorithm.hpp>
 #include <neu/activate_func/rectifier.hpp>
 #include <neu/activate_func/sigmoid.hpp>
@@ -8,15 +9,6 @@
 #include <neu/kernel.hpp>
 //#include <boost/timer/timer.hpp>
 
-decltype(auto) print(neu::cpu_vector const& v) {
-	for(auto const& e : v) {
-		std::cout << e << " ";
-	}
-	std::cout << std::flush;
-}
-decltype(auto) print(neu::gpu_vector const& v) {
-	print(neu::to_cpu_vector(v));
-}
 int main(int argc, char** argv) {
 	//boost::timer::auto_cpu_timer t;
 	std::cout << "hello world" << std::endl;
@@ -63,7 +55,7 @@ int main(int argc, char** argv) {
 		neu::make_dropout_wrapper(fc2, 0.5f, rand),
 		fc3
 	);
-	std::cout << "weight "; print(std::get<0>(layers).get_layer().get_weight());
+	std::cout << "weight "; neu::print(std::get<0>(layers).get_layer().get_weight());
 	std::cout << std::endl;
 
 	for(auto i = 0u; i < 1000u; ++i) {
@@ -88,9 +80,9 @@ int main(int argc, char** argv) {
 			std::cout << i << ":" << error_sum << std::endl;
 		}
 	}
-	print(teach); std::cout << "\n";
+	neu::print(teach); std::cout << "\n";
 	neu::feedforward_x_without_train(layers, input);
 	auto y = neu::layer_get_y(neu::tuple_back(layers));
-	print(y);
+	neu::print(y);
 	std::cout << std::endl;
 }

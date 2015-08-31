@@ -18,4 +18,5 @@ Implemented features
 - dropout
 
 ### Learning Rate Generator
+- fixed learning rate
 - AdaGrad

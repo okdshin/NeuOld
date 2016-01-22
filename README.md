@@ -2,7 +2,7 @@ Neu
 ===
 
 Neu is a C++ library for DNN using OpenCL.  
-INFO: this is Neu old version. Please check new Neu.
+**INFO: this is Neu old version. Please check new Neu.**
 
 Implemented features
 ---
